@@ -12,6 +12,7 @@
   "author": "maciej.rybaniec@gmail.com",
   "license": "ISC",
   "dependencies": {
+    "autobind-decorator": "^1.3.3",
     "react": "^15.1.0",
     "react-dom": "^15.1.0"
   },
