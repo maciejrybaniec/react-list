@@ -1,15 +1,15 @@
 const webpack = require('webpack');
-const { resolve } = require('path');
+const path = require('path');
 const htmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
     entry: __dirname + '/src/index.js',
     output: {
-        path: resolve(__dirname, 'dist'),
+        path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js'
     },
     devtool: 'eval',
-    context: resolve(__dirname, 'src'),
+    context: path.resolve(__dirname, 'src'),
     module: {
         loaders: [{
             test: /\.js?$/,
@@ -27,8 +27,7 @@ module.exports = {
         })
     ],
     devServer: {
-        contentBase: resolve(__dirname, 'dist'),
-        colors: true,
+        contentBase: path.resolve(__dirname, 'dist'),
         historyApiFallback: true,
         inline: true
     }
