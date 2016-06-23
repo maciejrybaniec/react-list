@@ -7,6 +7,7 @@ var Hello = React.createClass({
         return {show: false};
     },
     render: function() {
+        console.log('render',this.props.name);
         const innerJSX = this.state.show ? (
         <div>
             <p>inner shit</p>
@@ -38,7 +39,7 @@ var List = React.createClass({
               <Hello name={'World'+i} key={i} ref={'item'+i} />
            );
        }
-
+       console.log('render list ');
        return (
            <div className="List">
                <button onClick={this._hideItem}>Hide</button>
