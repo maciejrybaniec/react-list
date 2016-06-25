@@ -32,56 +32,71 @@ class Scroll extends Component {
         this.state = {
             isInit: false,
             estimatedHeight: 200,       //szacowana wysokość
-            scrollTop: 0
+            scrollTop: 0,
+            index: 0,
+            offsetTop: null         //gdy null, to trzeba wyznaczyć na podstawie scrolla
         };
     }
+/*
+gdy przesunięcie spowodowało że elementy są nadal widoczne
+    to "przesuń" elementy między "czankami", pobierając wysokość elementów przesuwanych
+
+gdy scroll spowodował że wyjechaliśmy za okno
+    to wyznacz na nowo offsetTop
+
+za każdym razem ustalaj na nowo wysokość głównego kontenera oraz tego czanka na dole
+*/
+
 /*
 dwa rodzaje zdarzeń mają zachodzić
 szybkie - bez debancingu, powodujące tylko odświeżenie duszków
 wolne - majace narysować zawartość
  */
     render() {
+        /*
         const styleInner = {
             height: (this.props.listLength * this.props.estimatedHeight) + 'px'
         };
+        */
 
         const title = this.state.isInit ? 'is load' : 'loading';
 
-        const [index, percent] = this._calculate();
-        //weźaktualnego scrolla, wyznacz pozycję tego elementu
-        //TODO - na początek powinien pokazywać numer elementu który ma być widoczny, oraz w jakim procencie na ekranie
+        const index = this._findIndex();
 
-        const offsetTop = /*index * this.props.estimatedHeight*/ - this._subOffser(percent);    // + (this.state.percent / 100);
+        const offsetTop = index * this.props.estimatedHeight;
 
-        const [isContent, indexList1, indexList2] = this._getIndex(index);
+        const [indexList1, indexList2] = this._getIndex(index);
 
-        const content1 = (isContent === true) ? this._getChankTop(index, offsetTop, indexList1) : null;
-        const content2 = (isContent === true) ? this._getChankBottom(index, offsetTop, indexList2) : null;
+        console.info('render', index, offsetTop, this.firstChild && this._getHeight(this.firstChild));
 
-        console.info('isContent', isContent, index, offsetTop, this.firstChild && this._getHeight(this.firstChild));
-
+        const debugBox = (
+            <div className="Scroll__debug">
+                <div>chank z itemami ({title}) -> {index}</div>
+                <div>{this.firstChild ? this._getHeight(this.firstChild) : '--'}</div>
+            </div>
+        );
+        
         return (
-            <div className="Scroll">
-                <div className="Scroll__scroll" ref={this._getRef} onScroll={debounce(this._onScroll, 0)}>
-                    <div className="Scroll__inner" style={styleInner}>
-                        {content1}
-                        {content2}
+            <div className="Scroll" ref={this._getRef} onScroll={debounce(this._onScroll, 0)}>
+                <div className="Scroll__top" style={{height: offsetTop+'px'}}>
+                    <div className="Scroll__top-inner">
+                        {this._getItemList(index, indexList1)}
                     </div>
                 </div>
-                <div className="Scroll__debug">
-                    <div>chank z itemami ({title}) -> {index} -> {percent}</div>
-                    <div>{index * this.props.estimatedHeight} - {this._subOffser(percent)} = {offsetTop}</div>
-                    <div>{this.firstChild ? this._getHeight(this.firstChild) : '--'}</div>
+                <div className="Scroll__bottom">
+                    <div className="Scroll__bottom-inner">
+                        {this._getItemList(index, indexList2)}
+                    </div>
                 </div>
-
+                {debugBox}
             </div>
         );
     }
 
-    _calculate() {
+    _findIndex() {
 
         if (this.contener === null) {
-            return [0,0];
+            return 0;
         }
 
         const all = this.contener.scrollHeight - this._getHeight(this.contener);
@@ -90,18 +105,8 @@ wolne - majace narysować zawartość
         const wsk = (this.state.scrollTop * maxLength) / all;
 
         const index = Math.floor(wsk);
-        const percent = wsk - index;
 
-        return [index, percent];
-    }
-
-    _subOffser(percent) {
-        if (this.firstChild !== null) {
-            const childHeight = this._getHeight(this.firstChild);
-            return Math.floor(childHeight * percent);
-        }
-
-        return 0;
+        return index;
     }
 
     @autobind
@@ -136,42 +141,7 @@ wolne - majace narysować zawartość
             }
         }
 
-        return [this.contener !== null, indexList1, indexList2];
-    }
-
-    @autobind
-    _getChankTop(index, offsetTop, indexList) {
-        const bottom = this.contener.scrollHeight - offsetTop;
-
-        const style = {
-            position: 'absolute',
-            left: '0px',
-            bottom: bottom + 'px',
-            width: '80%'
-        };
-
-        return (
-            <div className="Scroll__chank-top" style={style}>
-                {this._getItemList(index, indexList)}
-            </div>
-        );
-    }
-
-    @autobind
-    _getChankBottom(index, offsetTop, indexList) {
-        const style = {
-            position: 'absolute',
-            left: '0px',
-            top: offsetTop + 'px',
-            'borderTop' : '4px solid red',
-            width: '80%'
-        };
-
-        return (
-            <div className="Scroll__chank-bottom" style={style}>
-                {this._getItemList(index, indexList)}
-            </div>
-        );
+        return [indexList1, indexList2];
     }
 
     @autobind

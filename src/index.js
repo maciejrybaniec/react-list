@@ -58,7 +58,9 @@ class App extends Component {
         };
 
         return (
-            <span style={style}>element : {index}</span>
+            <div style={style}>
+                <span>element : {index}</span>
+            </div>
         );
     }
 /*
