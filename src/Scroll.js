@@ -18,7 +18,8 @@ class Scroll extends Component {
 
         setTimeout(()=>{
             this.setState({
-                isInit: true
+                offsetTop: 0,
+                index: 0
             });
         }, 1000);
     }
@@ -27,14 +28,11 @@ class Scroll extends Component {
         super(props);
 
         this.contener = null;   //główny kontener, ten który ma scrolla
-        this.firstChild = null;
+        this.child = {};
 
         this.state = {
-            isInit: false,
-            estimatedHeight: 200,       //szacowana wysokość
-            scrollTop: 0,
-            index: 0,
-            offsetTop: null         //gdy null, to trzeba wyznaczyć na podstawie scrolla
+            offsetTop: null,         //gdy null, to faza inicjowania
+            index: null,
         };
     }
 /*
@@ -53,25 +51,15 @@ szybkie - bez debancingu, powodujące tylko odświeżenie duszków
 wolne - majace narysować zawartość
  */
     render() {
-        /*
-        const styleInner = {
-            height: (this.props.listLength * this.props.estimatedHeight) + 'px'
-        };
-        */
+        const offsetTop = this.state.index * this.props.estimatedHeight;
+        const [indexList1, indexList2] = this._getIndex(this.state.index);
 
-        const title = this.state.isInit ? 'is load' : 'loading';
-
-        const index = this._findIndex();
-
-        const offsetTop = index * this.props.estimatedHeight;
-
-        const [indexList1, indexList2] = this._getIndex(index);
-
-        console.info('render', index, offsetTop, this.firstChild && this._getHeight(this.firstChild));
+        //TODO
+        //poustawiaj nowe indexy w obiekcie this.child
 
         const debugBox = (
             <div className="Scroll__debug">
-                <div>chank z itemami ({title}) -> {index}</div>
+                <div>chank z itemami ({this.state.offsetTop === null ? 'loading' : 'is load'}) -> {this.state.index}</div>
                 <div>{this.firstChild ? this._getHeight(this.firstChild) : '--'}</div>
             </div>
         );
@@ -80,12 +68,12 @@ wolne - majace narysować zawartość
             <div className="Scroll" ref={this._getRef} onScroll={debounce(this._onScroll, 0)}>
                 <div className="Scroll__top" style={{height: offsetTop+'px'}}>
                     <div className="Scroll__top-inner">
-                        {this._getItemList(index, indexList1)}
+                        {indexList1.map(this._getItem)}
                     </div>
                 </div>
                 <div className="Scroll__bottom">
                     <div className="Scroll__bottom-inner">
-                        {this._getItemList(index, indexList2)}
+                        {indexList2.map(this._getItem)}
                     </div>
                 </div>
                 {debugBox}
@@ -93,6 +81,33 @@ wolne - majace narysować zawartość
         );
     }
 
+    @autobind
+    _onScroll() {
+
+        const scrollTop = this.contener.scrollTop;
+        const offsetTop = 0;
+        const index = 0;
+
+        //wylicz nowy offsetTop i index ...
+
+        this.setState({
+            offsetTop : offsetTop,
+            index: index
+        });
+    }
+
+    /*
+    const index = this._findIndex();
+    console.info('render', index, offsetTop, this.firstChild && this._getHeight(this.firstChild));
+    */
+    /*
+    const styleInner = {
+        height: (this.props.listLength * this.props.estimatedHeight) + 'px'
+    };
+    */
+    //scrollTop: this.contener.scrollTop,
+
+/*
     _findIndex() {
 
         if (this.contener === null) {
@@ -101,31 +116,14 @@ wolne - majace narysować zawartość
 
         const all = this.contener.scrollHeight - this._getHeight(this.contener);
 
-        const maxLength = this.props.listLength - 1;                            //jeśli jest 10 elementów, to potrzebne są indexy od 0.00 do 9.00
+        const maxLength = this.props.listLength - 1;         //jeśli jest 10 elementów, to potrzebne są indexy od 0.00 do 9.00
         const wsk = (this.state.scrollTop * maxLength) / all;
 
         const index = Math.floor(wsk);
 
         return index;
     }
-
-    @autobind
-    _getRef(contener) {
-        this.contener = contener;
-    }
-
-    @autobind
-    _getFirstChild(item) {
-        this.firstChild = item;
-    }
-
-    @autobind
-    _onScroll() {
-        this.setState({
-            scrollTop: this.contener.scrollTop
-        });
-    }
-
+*/
     _getIndex(index) {
         const start = Math.max(index - 10, 0);
         const stop = Math.min(index + 10, this.props.listLength-1);
@@ -145,22 +143,11 @@ wolne - majace narysować zawartość
     }
 
     @autobind
-    _getItemList(index, indexList) {
-        return indexList.map((indexLocal) => {
-            return this._getItem(indexLocal, index === indexLocal);
-        });
-    }
-
-    @autobind
-    _getItem(index, addRef) {
-        const attr = {};
-
-        if (addRef === true) {
-            attr.ref = this._getFirstChild;
-        }
+    _getItem(index) {
+        const ref = this._getRefChild.bind(this, index);
 
         return (
-            <div key={index} {...attr} style={{width: '100%'}}>
+            <div key={index} ref={ref} style={{width: '100%'}}>
                 {this.props.getItem(index)}
             </div>
         );
@@ -169,6 +156,16 @@ wolne - majace narysować zawartość
     _getHeight(domElement) {
         const rect = domElement.getBoundingClientRect();
         return rect.bottom - rect.top;
+    }
+
+    @autobind
+    _getRef(contener) {
+        this.contener = contener;
+    }
+
+    @autobind
+    _getRefChild(index, item) {
+        this.child[index] = item;
     }
 }
 
