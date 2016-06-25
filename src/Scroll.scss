@@ -1,21 +1,3 @@
-<!doctype html>
-<html>
-    <head>
-        <title>React-list</title>
-    </head>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            border: 0;
-            box-sizing: border-box;
-        }
-        .ReactList {
-            height: 2000px;
-            max-height: 400px;
-            overflow-y: scroll;
-        }
-        
 .Scroll {
     width: 100%;
     height: 100%;
@@ -37,7 +19,7 @@
 .Scroll__debug {
     position: fixed;
     right: 10px;
-    bottom: 10px;
+    top: 10px;
     background-color: blue;
 }
 
@@ -48,8 +30,3 @@
 .Scroll__chank-bottom {
     border: 1px solid white;
 }
-    </style>
-    <body>
-        <div id="app"></app>
-    </body>
-</html>

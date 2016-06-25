@@ -1,20 +1,9 @@
 import autobind from 'autobind-decorator';
 import React, { PropTypes, Component } from 'react';
 import ReactDOM, { render } from 'react-dom';
+import Scroll from './Scroll';
 
-class ReactListItem extends Component {
-    constructor(props: Object) {
-        super(props);
-    }
-    render(): any {
-        return (
-            <div className="ReactListItem">
-                React Item
-            </div>
-        );
-    }
-}
-
+/*
 class ReactList extends Component {
     static propTypes = {
         estimatedItemHeight: PropTypes.number.isRequired,
@@ -26,33 +15,60 @@ class ReactList extends Component {
         this.state = this._getInitialState();
     }
     render(): any {
-        const { visibleItems } = this.state;
         return (
-            <div className="ReactList" onScroll={this._onScroll}>
-                {visibleItems.map(function(item) {
-                    return <ReactListItem {...item} />;
-                })}
+            <div className="ReactList">
+            asdasdas react list
             </div>
         );
     }
-    @autobind
-    _calculateDisplayRange() {
+}
+*/
+
+class App extends Component {
+    renderItem() {
 
     }
-    @autobind
-    _getInitialState() {
-        return {}
+    render(): any {
+        return (
+            <div style={{width: '300px', height: '400px', backgroundColor: 'yellow'}}>
+                <Scroll
+                    listLength={100}
+                    estimatedHeight={200}
+                    getItem={this._getItem}
+                />
+            </div>
+        );
     }
-    @autobind
-    _onScroll(event: Object) {
-        console.log('scroll', event.target.scrollTop);
+
+    _getItem(index) {
+        //const height = ((index % 5 + 2.5 * (index % 2)) * 70);
+
+        const height = 200 + index % 2 * 100;
+        const color = index % 2 ? '#e0e0e0' : 'yellow';
+
+        const style = {
+            'display' : 'flex',
+            'alignItems' : 'center',
+            'justifyContent' : 'center',
+            'width' : '100%',
+            'height' : (height > 0 ? height : 100) + 'px',
+            backgroundColor : color,
+            color: 'black',
+            'textAlign' : 'center'
+        };
+
+        return (
+            <span style={style}>element : {index}</span>
+        );
     }
+/*
+<ReactList
+    estimatedItemHeight={200}
+    collection={[]}
+    renderItem={renderItem}
+/>
+*/
 }
 
-render(
-    <ReactList
-        estimatedItemHeight={200}
-        collection={[]}
-    />,
-    document.getElementById('app')
-)
+
+render(<App/>, document.getElementById('app'))
