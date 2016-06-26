@@ -11,6 +11,8 @@ class Scroll extends Component {
         listLength: PropTypes.number.isRequired,
         estimatedHeight : PropTypes.number.isRequired,
         getItem : PropTypes.func.isRequired
+        //pre top
+        //pre bottom        dodać również defaulty
     };
 
     componentDidMount() {
@@ -50,12 +52,18 @@ wolne - majace narysować zawartość
 */
     render() {
         const offsetTop = this.state.offsetTop;
-        const [start, stop, indexList1, indexList2] = this._getIndex(this.state.index);
+        const {indexList1, indexList2} = this._getIndex(this.state.index);
 
-        this.child = this._rewriteChild(start, stop);
+        //this.child = this._rewriteChild(start, stop);
 
-        const heightBottom = (this.state.index === null) ? 0 :this._findHeightBottom(this.state.index, this.child);
-
+        const heightBottom = (this.state.index === null) ? 0 : this._findHeightBottom(this.state.index, this.child);
+        
+            //TODO - tymczasowo
+        document.title = this.state.index + ' ' + this.state.offsetTop;
+        
+        //const allHeight = offsetTop + heightBottom;
+        //<div style={{height: allHeight + 'px'}}>
+        
         //debounce(this._onScroll, 0)
         return (
             <div className="Scroll" ref={this._getRef} onScroll={this._onScroll}>
@@ -86,27 +94,51 @@ wolne - majace narysować zawartość
     @autobind
     _onScroll() {
         
+        if (this.state.index === null) {
+            return;
+        }
+
+        /*
+        const {start, stop} = this._getIndex(this.state.index);
+        if (this._isOkStartAndStop(start, stop)) {    
+        }
+        */
+        
         const rectBottom = this.contenerBottom.getBoundingClientRect();
         const scrollTop = this.contener.scrollTop;
+        const currentItemIndex = this._findCurrent(scrollTop + rectBottom.top, this.child);
         
-        const currentItem = this._findCurrent(scrollTop + rectBottom.top, this.child);
-        
-        if (currentItem === null) {
+        if (currentItemIndex === null) {
+            
+            this.setState({
+                offsetTop : 0,
+                index: 0
+            });
+            
+            const {start, stop} = this._getIndex(this.state.index);
+            this.child = this._rewriteChild(start, stop);
+
             //wyznaczaj przybliżony rozmiar na podstawie scrolla
         } else {
             //przesuń płynnie
+            
+            const currentItem = this.child[currentItemIndex];
+            const rect = currentItem.getBoundingClientRect();
+            
+            if (currentItem !== this.state.index) {
+                
+                const prevItem = this.child[this.state.index];
+                const rectPrev = prevItem.getBoundingClientRect();
+                
+                this.setState({
+                    offsetTop: this.state.offsetTop + (rect.top - rectPrev.top),
+                    index : currentItemIndex
+                });
+                
+                const {start, stop} = this._getIndex(this.state.index);
+                this.child = this._rewriteChild(start, stop);
+            }
         }
-
-        
-        const offsetTop = 0;            //to powinno być nowe wyliczone
-        const index = 0;                //to powinno być nowe wyliczone
-
-        console.info('znaleziony current', currentItem);
-
-        this.setState({
-            offsetTop : offsetTop,
-            index: index
-        });
     }
 
     @autobind
@@ -145,7 +177,7 @@ wolne - majace narysować zawartość
         const rect1 = firstItem.getBoundingClientRect();
         const rect2 = lastItem.getBoundingClientRect();
         
-        return rect1.top <= scrollTop && scrollTop <= rect2.bottom;
+        return this.state.offsetTop + rect1.top <= scrollTop && scrollTop <= this.state.offsetTop + rect2.bottom;
     }
 
     @autobind
@@ -190,13 +222,16 @@ wolne - majace narysować zawartość
     }
 
     _getIndex(index) {
+        
+        index = parseInt(index, 10);            //TODO - znaleźć coś bardziej eleganckiego
+        
         const start = Math.max(index - 10, 0);
-        const stop = Math.min(index + 10, this.props.listLength-1);
+        const stop = Math.min(index + 9, this.props.listLength-1);
 
         const indexList1 = [];
         const indexList2 = [];
 
-        for (let i=start; i<stop; i++) {
+        for (let i=start; i<=stop; i++) {
             if (i < index) {
                 indexList1.push(i);
             } else {
@@ -204,7 +239,7 @@ wolne - majace narysować zawartość
             }
         }
 
-        return [start, stop, indexList1, indexList2];
+        return {start, stop, indexList1, indexList2};
     }
 
     @autobind
@@ -225,17 +260,23 @@ wolne - majace narysować zawartość
 
     @autobind
     _getRef(contener) {
-        this.contener = contener;
+        if (contener) {
+            this.contener = contener;
+        }
     }
 
     @autobind
     _getRefBottom(contener) {
-        this.contenerBottom = contener;
+        if (contener) {
+            this.contenerBottom = contener;
+        }
     }
 
     @autobind
     _getRefChild(index, item) {
-        this.child[index] = item;
+        if (item) {
+            this.child[index] = item;
+        }
     }
 }
 
