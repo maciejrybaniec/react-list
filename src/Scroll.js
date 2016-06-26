@@ -54,19 +54,13 @@ wolne - majace narysować zawartość
         const offsetTop = this.state.offsetTop;
         const {indexList1, indexList2} = this._getIndex(this.state.index);
 
-        //this.child = this._rewriteChild(start, stop);
-
         const heightBottom = (this.state.index === null) ? 0 : this._findHeightBottom(this.state.index, this.child);
         
             //TODO - tymczasowo
         document.title = this.state.index + ' ' + this.state.offsetTop;
         
-        //const allHeight = offsetTop + heightBottom;
-        //<div style={{height: allHeight + 'px'}}>
-        
-        //debounce(this._onScroll, 0)
         return (
-            <div className="Scroll" ref={this._getRef} onScroll={this._onScroll}>
+            <div className="Scroll" ref={this._getRef} onScroll={debounce(this._onScroll, 200)}>
                 <div className="Scroll__top" style={{height: offsetTop+'px'}}>
                     <div className="Scroll__top-inner">
                         {indexList1.map(this._getItem)}
@@ -98,27 +92,25 @@ wolne - majace narysować zawartość
             return;
         }
 
-        /*
-        const {start, stop} = this._getIndex(this.state.index);
-        if (this._isOkStartAndStop(start, stop)) {    
-        }
-        */
-        
         const rectBottom = this.contenerBottom.getBoundingClientRect();
         const scrollTop = this.contener.scrollTop;
         const currentItemIndex = this._findCurrent(scrollTop + rectBottom.top, this.child);
-        
+
+                    //wyznaczaj przybliżony rozmiar na podstawie scrolla
+
         if (currentItemIndex === null) {
             
+            const newIndex = Math.min(Math.round(scrollTop / this.props.estimatedHeight), this.props.listLength - 1) - 1;
+            const offsetTop = newIndex * this.props.estimatedHeight;
+            
             this.setState({
-                offsetTop : 0,
-                index: 0
+                offsetTop : offsetTop,
+                index: newIndex
             });
             
             const {start, stop} = this._getIndex(this.state.index);
             this.child = this._rewriteChild(start, stop);
 
-            //wyznaczaj przybliżony rozmiar na podstawie scrolla
         } else {
             //przesuń płynnie
             
@@ -130,6 +122,7 @@ wolne - majace narysować zawartość
                 const prevItem = this.child[this.state.index];
                 const rectPrev = prevItem.getBoundingClientRect();
                 
+                //TODO - gdy sie cofamy, to trzeba dodać koretkę offsetu .... (w dół samoczynnie ona zachodzi)
                 this.setState({
                     offsetTop: this.state.offsetTop + (rect.top - rectPrev.top),
                     index : currentItemIndex
