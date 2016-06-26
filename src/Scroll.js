@@ -85,18 +85,21 @@ wolne - majace narysować zawartość
 
     @autobind
     _onScroll() {
-
+        
+        const rectBottom = this.contenerBottom.getBoundingClientRect();
         const scrollTop = this.contener.scrollTop;
-        const offsetTop = 0;            //to powinno być nowe wyliczone
-        const index = 0;                //to powinno być nowe wyliczone
-
-        const currentItem = this._findCurrent(scrollTop, this.child);
+        
+        const currentItem = this._findCurrent(scrollTop + rectBottom.top, this.child);
         
         if (currentItem === null) {
             //wyznaczaj przybliżony rozmiar na podstawie scrolla
         } else {
             //przesuń płynnie
         }
+
+        
+        const offsetTop = 0;            //to powinno być nowe wyliczone
+        const index = 0;                //to powinno być nowe wyliczone
 
         console.info('znaleziony current', currentItem);
 
@@ -108,13 +111,10 @@ wolne - majace narysować zawartość
 
     @autobind
     _findCurrent(scrollTop, child) {
-        
-        const contenerTopOffset = this.contenerBottom.getBoundingClientRect().top;
-        const newScrollTop = contenerTopOffset + scrollTop;
         const indexList = Object.keys(child);
         
-        if (this._isScrollInList(indexList, newScrollTop)) {
-            return this._findCurrentFromList(indexList, newScrollTop);
+        if (this._isScrollInList(indexList, scrollTop)) {
+            return this._findCurrentFromList(indexList, scrollTop);
         } else {
             return null;
         }
