@@ -90,23 +90,15 @@ wolne - majace narysować zawartość
         const offsetTop = 0;            //to powinno być nowe wyliczone
         const index = 0;                //to powinno być nowe wyliczone
 
-        const [firstChild, lastChild] = this._getFirstAndLast(this.child);
-        const [childTop, childBottom] = this._getRange(firstChild, lastChild);
+        const currentItem = this._findCurrent(scrollTop, this.child);
         
-        console.info('first and last', firstChild, lastChild, childTop, childBottom, scrollTop);
-        //czy pozycja nowego przesunięcia mieści się w zakresie istniejących dzieci
-            //tak
-                //dokonaj tylko korekty
-            //nie
-                //dokonaj zupełnie nowego wyliczenia index-a a na jego podstawie offsetTop
-        
-        //jest w zerowum - tak - nic nie robimy
-        //jest w ostatnim - tak -
-            //nie
-                //przekracza - tak
-                //przekracza nie
-        
-        console.info('child - powinien być kompletny ten obiekt', this.child);
+        if (currentItem === null) {
+            //wyznaczaj przybliżony rozmiar na podstawie scrolla
+        } else {
+            //przesuń płynnie
+        }
+
+        console.info('znaleziony current', currentItem);
 
         this.setState({
             offsetTop : offsetTop,
@@ -114,53 +106,64 @@ wolne - majace narysować zawartość
         });
     }
 
-
-    /*
-    const debugBox = (
-        <div className="Scroll__debug">
-            <div>chank z itemami ({this.state.offsetTop === null ? 'loading' : 'is load'}) -> {this.state.index}</div>
-            <div>{this.firstChild ? this._getHeight(this.firstChild) : '--'}</div>
-        </div>
-    );
-    */
-
-/*
-    _findIndex() {
-
-        if (this.contener === null) {
-            return 0;
+    @autobind
+    _findCurrent(scrollTop, child) {
+        
+        const contenerTopOffset = this.contenerBottom.getBoundingClientRect().top;
+        const newScrollTop = contenerTopOffset + scrollTop;
+        const indexList = Object.keys(child);
+        
+        if (this._isScrollInList(indexList, newScrollTop)) {
+            return this._findCurrentFromList(indexList, newScrollTop);
+        } else {
+            return null;
         }
-
-        const all = this.contener.scrollHeight - this._getHeight(this.contener);
-
-        const maxLength = this.props.listLength - 1;         //jeśli jest 10 elementów, to potrzebne są indexy od 0.00 do 9.00
-        const wsk = (this.state.scrollTop * maxLength) / all;
-
-        const index = Math.floor(wsk);
-
-        return index;
-    }
-*/
-
-    @autobind
-    _getRange(firstChild, lastChild) {
-        const rect0 = this.contenerBottom.getBoundingClientRect();
-        const rect1 = firstChild.getBoundingClientRect();
-        const rect2 = lastChild.getBoundingClientRect();
-        return [rect1.top - rect0.top, rect2.bottom - rect0.top];
     }
 
     @autobind
-    _getFirstAndLast(child) {
-        const keys = Object.keys(child);
+    _findCurrentFromList(indexList, scrollTop) {
         
-        const firstKey = keys.shift();
-        const lastKey = keys.pop();
+        if (indexList.length === 1) {
+            return indexList[0];
+        }
         
-        const firstItem = child[firstKey];
-        const lastItem = child[lastKey];
+        const [left, right] = this._splitToHalf(indexList);
 
-        return [firstItem, lastItem];
+        if (this._isScrollInList(left, scrollTop)) {
+            return this._findCurrentFromList(left, scrollTop);
+        } else {
+            return this._findCurrentFromList(right, scrollTop);
+        }
+    }
+
+    @autobind
+    _isScrollInList(indexList, scrollTop) {
+        
+        const firstItem = this.child[indexList[0]];
+        const lastItem = this.child[indexList[indexList.length - 1]];
+        
+        const rect1 = firstItem.getBoundingClientRect();
+        const rect2 = lastItem.getBoundingClientRect();
+        
+        return rect1.top <= scrollTop && scrollTop <= rect2.bottom;
+    }
+
+    @autobind
+    _splitToHalf(list) {
+        const center = Math.floor(list.length / 2);
+        
+        const left = [];
+        const right = [];
+        
+        while (list.length > 0) {
+            if (list.length % 2 === 0) {
+                left.push(list.shift());
+            } else {
+                right.unshift(list.pop());
+            }
+        }
+        
+        return [left, right];
     }
 
     @autobind
