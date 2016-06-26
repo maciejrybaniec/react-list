@@ -28,6 +28,7 @@ class Scroll extends Component {
         super(props);
 
         this.contener = null;   //główny kontener, ten który ma scrolla
+        this.contenerBottom = null;     //dolny kontener - referencyjny dla dzieci
         this.child = {};
 
         this.state = {
@@ -36,9 +37,6 @@ class Scroll extends Component {
         };
     }
 /*
-gdy przesunięcie spowodowało że elementy są nadal widoczne
-    to "przesuń" elementy między "czankami", pobierając wysokość elementów przesuwanych
-
 gdy scroll spowodował że wyjechaliśmy za okno
     to wyznacz na nowo offsetTop
 
@@ -49,46 +47,66 @@ za każdym razem ustalaj na nowo wysokość głównego kontenera oraz tego czan
 dwa rodzaje zdarzeń mają zachodzić
 szybkie - bez debancingu, powodujące tylko odświeżenie duszków
 wolne - majace narysować zawartość
- */
+*/
     render() {
-        const offsetTop = this.state.index * this.props.estimatedHeight;
-        const [indexList1, indexList2] = this._getIndex(this.state.index);
+        const offsetTop = this.state.offsetTop;
+        const [start, stop, indexList1, indexList2] = this._getIndex(this.state.index);
 
-        //TODO
-        //poustawiaj nowe indexy w obiekcie this.child
+        this.child = this._rewriteChild(start, stop);
 
-        const debugBox = (
-            <div className="Scroll__debug">
-                <div>chank z itemami ({this.state.offsetTop === null ? 'loading' : 'is load'}) -> {this.state.index}</div>
-                <div>{this.firstChild ? this._getHeight(this.firstChild) : '--'}</div>
-            </div>
-        );
-        
+        const heightBottom = (this.state.index === null) ? 0 :this._findHeightBottom(this.state.index, this.child);
+
+        //debounce(this._onScroll, 0)
         return (
-            <div className="Scroll" ref={this._getRef} onScroll={debounce(this._onScroll, 0)}>
+            <div className="Scroll" ref={this._getRef} onScroll={this._onScroll}>
                 <div className="Scroll__top" style={{height: offsetTop+'px'}}>
                     <div className="Scroll__top-inner">
                         {indexList1.map(this._getItem)}
                     </div>
                 </div>
-                <div className="Scroll__bottom">
+                <div className="Scroll__bottom" ref={this._getRefBottom} style={{height: heightBottom + 'px'}}>
                     <div className="Scroll__bottom-inner">
                         {indexList2.map(this._getItem)}
                     </div>
                 </div>
-                {debugBox}
             </div>
         );
+    }
+
+    _rewriteChild(start, stop) {
+        const newChild = {};
+        
+        for (let i=start; i<stop; i++) {
+            newChild[i] = this.child[i] ? this.child[i] : null;
+        }
+        
+        return newChild;
     }
 
     @autobind
     _onScroll() {
 
         const scrollTop = this.contener.scrollTop;
-        const offsetTop = 0;
-        const index = 0;
+        const offsetTop = 0;            //to powinno być nowe wyliczone
+        const index = 0;                //to powinno być nowe wyliczone
 
-        //wylicz nowy offsetTop i index ...
+        const [firstChild, lastChild] = this._getFirstAndLast(this.child);
+        const [childTop, childBottom] = this._getRange(firstChild, lastChild);
+        
+        console.info('first and last', firstChild, lastChild, childTop, childBottom, scrollTop);
+        //czy pozycja nowego przesunięcia mieści się w zakresie istniejących dzieci
+            //tak
+                //dokonaj tylko korekty
+            //nie
+                //dokonaj zupełnie nowego wyliczenia index-a a na jego podstawie offsetTop
+        
+        //jest w zerowum - tak - nic nie robimy
+        //jest w ostatnim - tak -
+            //nie
+                //przekracza - tak
+                //przekracza nie
+        
+        console.info('child - powinien być kompletny ten obiekt', this.child);
 
         this.setState({
             offsetTop : offsetTop,
@@ -96,16 +114,15 @@ wolne - majace narysować zawartość
         });
     }
 
+
     /*
-    const index = this._findIndex();
-    console.info('render', index, offsetTop, this.firstChild && this._getHeight(this.firstChild));
+    const debugBox = (
+        <div className="Scroll__debug">
+            <div>chank z itemami ({this.state.offsetTop === null ? 'loading' : 'is load'}) -> {this.state.index}</div>
+            <div>{this.firstChild ? this._getHeight(this.firstChild) : '--'}</div>
+        </div>
+    );
     */
-    /*
-    const styleInner = {
-        height: (this.props.listLength * this.props.estimatedHeight) + 'px'
-    };
-    */
-    //scrollTop: this.contener.scrollTop,
 
 /*
     _findIndex() {
@@ -124,6 +141,51 @@ wolne - majace narysować zawartość
         return index;
     }
 */
+
+    @autobind
+    _getRange(firstChild, lastChild) {
+        const rect0 = this.contenerBottom.getBoundingClientRect();
+        const rect1 = firstChild.getBoundingClientRect();
+        const rect2 = lastChild.getBoundingClientRect();
+        return [rect1.top - rect0.top, rect2.bottom - rect0.top];
+    }
+
+    @autobind
+    _getFirstAndLast(child) {
+        const keys = Object.keys(child);
+        
+        const firstKey = keys.shift();
+        const lastKey = keys.pop();
+        
+        const firstItem = child[firstKey];
+        const lastItem = child[lastKey];
+
+        return [firstItem, lastItem];
+    }
+
+    @autobind
+    _findHeightBottom(index, child) {
+
+        let indexFor = index;
+        const listLength = this.props.listLength;
+        let outHeight = 0;
+        
+        for (;;) {
+            if (indexFor <= listLength - 1) {
+                const item = child[indexFor];
+                if (item) {
+                    outHeight += this._getHeight(item);
+                    indexFor++;
+                } else {
+                    const othersItems = listLength - indexFor;
+                    return outHeight + this.props.estimatedHeight * othersItems;
+                }
+            } else {
+                return outHeight;
+            }
+        }
+    }
+
     _getIndex(index) {
         const start = Math.max(index - 10, 0);
         const stop = Math.min(index + 10, this.props.listLength-1);
@@ -139,7 +201,7 @@ wolne - majace narysować zawartość
             }
         }
 
-        return [indexList1, indexList2];
+        return [start, stop, indexList1, indexList2];
     }
 
     @autobind
@@ -161,6 +223,11 @@ wolne - majace narysować zawartość
     @autobind
     _getRef(contener) {
         this.contener = contener;
+    }
+
+    @autobind
+    _getRefBottom(contener) {
+        this.contenerBottom = contener;
     }
 
     @autobind

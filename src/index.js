@@ -44,7 +44,7 @@ class App extends Component {
         //const height = ((index % 5 + 2.5 * (index % 2)) * 70);
 
         const height = 200 + index % 2 * 100;
-        const color = index % 2 ? '#e0e0e0' : 'yellow';
+        const color = index % 2 ? '#e0e0e0' : '#888'; //yellow';
 
         const style = {
             'display' : 'flex',
